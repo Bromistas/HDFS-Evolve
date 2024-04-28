@@ -2,6 +2,8 @@ package main
 
 import (
 	"HDFS-Evolve/p2p"
+	"bytes"
+	"encoding/gob"
 	"fmt"
 	"io"
 	"log"
@@ -69,6 +71,46 @@ func (fs *FileServer) bootstrapNetwork() error {
 	return nil
 }
 
+type Payload struct {
+	Key  string
+	Data []byte
+}
+
+func (fs *FileServer) broadcast(p Payload) error {
+	peers := []io.Writer{}
+
+	for _, peer := range fs.peers {
+		peers = append(peers, peer)
+	}
+
+	mw := io.MultiWriter(peers...)
+	return gob.NewEncoder(mw).Encode(p)
+}
+
+func (fs *FileServer) StoreData(key string, r io.Reader) error {
+
+	buf := new(bytes.Buffer)
+	tee := io.TeeReader(r, buf)
+
+	if err := fs.store.Write(key, tee); err != nil {
+		return err
+	}
+
+	_, err := io.Copy(buf, r)
+	if err != nil {
+		return err
+	}
+
+	p := &Payload{
+		Key:  key,
+		Data: buf.Bytes(),
+	}
+
+	fmt.Println(p.Data)
+
+	return nil
+}
+
 func (fs *FileServer) OnPeer(p p2p.Peer) error {
 	fs.peerLock.Lock()
 	defer fs.peerLock.Unlock()
@@ -89,7 +131,11 @@ func (fs *FileServer) loop() {
 	for {
 		select {
 		case msg := <-fs.Transport.Consume():
-			fmt.Println(msg)
+			var p Payload
+			if err := gob.NewDecoder(bytes.NewReader(msg.Payload)).Decode(&p); err != nil {
+				log.Fatal(err)
+			}
+			fmt.Printf("%+v\n", p)
 		case <-fs.quitch:
 			return
 		}
