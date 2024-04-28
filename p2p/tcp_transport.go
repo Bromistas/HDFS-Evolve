@@ -28,7 +28,7 @@ type TCPTransport struct {
 	TCPTransportOpts
 	listener net.Listener
 
-	mu    sync.Mutex
+	mu    sync.RWMutex
 	peers map[net.Addr]Peer
 }
 
@@ -74,7 +74,7 @@ func (t *TCPTransport) handleConn(conn net.Conn) {
 	}
 
 	// Read Loop
-	msg := &Message{}
+	msg := &RPC{}
 	for {
 		if err := t.Decoder.Decode(conn, msg); err != nil {
 			fmt.Printf("TCP decode error: %s\n", err)
