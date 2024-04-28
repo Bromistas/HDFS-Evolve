@@ -2,14 +2,10 @@ package main
 
 import (
 	"HDFS-Evolve/p2p"
-	"fmt"
 	"log"
-	"time"
 )
 
-func main() {
-
-	listenAddr := ":3000"
+func makeServer(listenAddr string, nodes ...string) *FileServer {
 
 	tcpTransPortOpts := p2p.TCPTransportOpts{
 		HandshakeFunc: p2p.NOPHandshakeFunc,
@@ -21,20 +17,28 @@ func main() {
 
 	fsOpts := FileServerOpts{
 		ListenAddr:        listenAddr,
-		StorageRoot:       "3000_network",
+		StorageRoot:       listenAddr + "_network",
 		PathTransformFunc: CASPathTransformFunc,
 		Transport:         tcpTransport,
+		BootstrapNodes:    nodes,
 	}
 
-	s := NewFileServer(fsOpts)
+	fs := NewFileServer(fsOpts)
+	tcpTransport.OnPeer = fs.OnPeer
+
+	return fs
+}
+
+func main() {
+	s1 := makeServer(":3000", "")
+	s2 := makeServer(":4000", ":3000")
 
 	go func() {
-		fmt.Printf("temp")
-		time.Sleep(time.Second * 3)
-		s.Stop()
+		log.Fatal(s1.Start())
 	}()
 
-	if err := s.Start(); err != nil {
-		log.Fatal(err)
-	}
+	s2.Start()
+
+	//data := bytes.NewReader([]byte("Hello, World!"))
+
 }
