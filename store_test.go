@@ -2,7 +2,6 @@ package main
 
 import (
 	"bytes"
-	"fmt"
 	"io/ioutil"
 	"testing"
 )
@@ -61,9 +60,18 @@ func TestStore(t *testing.T) {
 	}
 
 	b, _ := ioutil.ReadAll(r)
-	fmt.Println(string(b))
-
 	if string(b) != string(data) {
 		t.Errorf("want %s have %s", data, b)
+	}
+
+	// Test Has
+	if s.Has(key) == false {
+		t.Errorf("Expected key to exist")
+	}
+
+	s.Delete(key)
+
+	if s.Has(key) {
+		t.Errorf("Expected key to be deleted")
 	}
 }
