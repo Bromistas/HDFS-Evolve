@@ -2,28 +2,39 @@ package main
 
 import (
 	"HDFS-Evolve/p2p"
+	"fmt"
 	"log"
+	"time"
 )
 
 func main() {
-	opts := p2p.TCPTransportOpts{
+
+	listenAddr := ":3000"
+
+	tcpTransPortOpts := p2p.TCPTransportOpts{
 		HandshakeFunc: p2p.NOPHandshakeFunc,
-		Decoder:       p2p.DefaultDecoder{},
-		ListenAddr:    ":3000",
+		Decoder:       p2p.GOBDecoder{},
+		ListenAddr:    listenAddr,
 	}
 
-	tr := p2p.NewTcpTransport(opts)
+	tcpTransport := p2p.NewTcpTransport(tcpTransPortOpts)
+
+	fsOpts := FileServerOpts{
+		ListenAddr:        listenAddr,
+		StorageRoot:       "3000_network",
+		PathTransformFunc: CASPathTransformFunc,
+		Transport:         tcpTransport,
+	}
+
+	s := NewFileServer(fsOpts)
 
 	go func() {
-		for {
-			msg := <-tr.Consume()
-			log.Printf("Received message: %+v\n", msg)
-		}
+		fmt.Printf("temp")
+		time.Sleep(time.Second * 3)
+		s.Stop()
 	}()
 
-	if err := tr.ListenAndAccept(); err != nil {
+	if err := s.Start(); err != nil {
 		log.Fatal(err)
 	}
-
-	select {}
 }
