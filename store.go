@@ -82,6 +82,32 @@ func (s *Store) writeStream(key string, r io.Reader) error {
 	return nil
 }
 
+func (p PathKey) FirstPathName() string {
+	paths := strings.Split(p.PathName, "/")
+	if len(paths) == 0 {
+		return ""
+	}
+
+	return paths[0]
+}
+
+func (s *Store) Delete(key string) error {
+	pathKey := s.PathTransform(key)
+
+	defer func() {
+		log.Printf("deleted [%s] from disk", pathKey.Filename)
+	}()
+
+	return os.RemoveAll(pathKey.FirstPathName())
+}
+
+func (s *Store) Has(key string) bool {
+	pathKey := s.PathTransform(key)
+	_, err := os.Stat(pathKey.FullPath())
+	return err == nil
+
+}
+
 func (s *Store) Read(key string) (io.Reader, error) {
 	f, err := s.readStream(key)
 	if err != nil {
