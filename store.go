@@ -107,6 +107,11 @@ func (p PathKey) FirstPathName() string {
 	return paths[0]
 }
 
+func (s *Store) Write(key string, r io.Reader) error {
+	return s.writeStream(key, r)
+
+}
+
 func (s *Store) Delete(key string) error {
 	pathKey := s.PathTransform(key)
 

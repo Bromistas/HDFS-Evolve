@@ -64,7 +64,6 @@ func TestStore(t *testing.T) {
 		t.Errorf("want %s have %s", data, b)
 	}
 
-	// Test Has
 	if s.Has(key) == false {
 		t.Errorf("Expected key to exist")
 	}
